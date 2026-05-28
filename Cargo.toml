@@ -1,0 +1,10 @@
+[package]
+name = "todomgr"
+version = "0.1.2"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0.102"
+clap = { version = "4.5.54", features = ["derive"] }
+colored = "3.1.1"
+nerd-font-symbols = "0.3.0"
