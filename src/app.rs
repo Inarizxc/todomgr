@@ -1,7 +1,9 @@
 use anyhow::{Context, Result, anyhow, bail};
 use colored::*;
 use std::{
+    collections::BTreeSet,
     fs::{self, File},
+    io::{BufWriter, Write},
     path::PathBuf,
 };
 
@@ -11,6 +13,17 @@ enum State {
     Doing,
     Done,
     Dropped,
+}
+
+impl State {
+    fn as_str(&self) -> &str {
+        match self {
+            State::Todo => "Todo",
+            State::Doing => "Doing",
+            State::Done => "Done",
+            State::Dropped => "Dropped",
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -28,20 +41,17 @@ impl TodoMgr {
     pub fn init(path: Option<PathBuf>) -> Result<TodoMgr> {
         match path {
             Some(mut file_path) => {
-                if file_path.is_file() {
-                    Ok(TodoMgr {
-                        list: vec![],
-                        file_path,
-                    })
-                } else if file_path.is_dir() {
+                if file_path.is_dir() {
                     file_path.push(".todo");
-                    Ok(TodoMgr {
-                        list: vec![],
-                        file_path,
-                    })
-                } else {
+                } else if fs::exists(&file_path).context("File existence check error")?
+                    && !file_path.is_file()
+                {
                     bail!("Path is not a dir or file")
                 }
+                Ok(TodoMgr {
+                    list: vec![],
+                    file_path,
+                })
             }
             None => Ok(TodoMgr {
                 list: vec![],
@@ -64,13 +74,19 @@ impl TodoMgr {
     }
 
     pub fn save(&self) -> Result<()> {
-        let mut contents = String::new();
+        // let mut contents = String::new();
+        // for todo in &self.list {
+        //     contents += &format!("[{}] ", todo.state.as_str());
+        //     contents += &todo.content;
+        //     contents += "\n";
+        // }
+        // fs::write(&self.file_path, contents).context("File write error")?;
+
+        let file = fs::File::create(&self.file_path)?;
+        let mut writer = BufWriter::new(file);
         for todo in &self.list {
-            contents += &format!("[{:?}] ", todo.state);
-            contents += &todo.content;
-            contents += "\n";
+            writeln!(writer, "[{}] {}", todo.state.as_str(), todo.content)?;
         }
-        fs::write(&self.file_path, contents).context("File write error")?;
         Ok(())
     }
 
@@ -142,21 +158,31 @@ impl TodoMgr {
         Ok(())
     }
 
-    pub fn remove(&mut self, mut ids: Vec<u16>) -> Result<()> {
-        ids.sort();
-        ids.dedup();
-        for id in ids.iter().rev() {
-            if self.list.len() >= *id as usize && *id as usize != 0 {
-                self.list.remove((id - 1) as usize);
-            } else {
+    pub fn remove(
+        &mut self,
+        ids: Option<Vec<u16>>,
+        from: Option<u16>,
+        to: Option<u16>,
+    ) -> Result<()> {
+        let todo_set = self.collect_ids(ids, from, to)?;
+        for id in todo_set.iter().rev() {
+            if *id as usize == 0 || (*id as usize) > self.list.len() {
                 bail!("Unknown ID");
             }
+            self.list.remove((id - 1) as usize);
         }
+
         Ok(())
     }
 
-    pub fn switch(&mut self, ids: Vec<u16>) -> Result<()> {
-        for id in ids {
+    pub fn switch(
+        &mut self,
+        ids: Option<Vec<u16>>,
+        from: Option<u16>,
+        to: Option<u16>,
+    ) -> Result<()> {
+        let todo_set = self.collect_ids(ids, from, to)?;
+        for id in todo_set {
             let todo = self.get_todo(id).context("Get todo error")?;
             match todo.state {
                 State::Todo => todo.state = State::Doing,
@@ -165,20 +191,29 @@ impl TodoMgr {
                 State::Dropped => todo.state = State::Todo,
             }
         }
-
         Ok(())
     }
 
-    pub fn drop(&mut self, ids: Vec<u16>) -> Result<()> {
-        for id in ids {
+    pub fn drop(
+        &mut self,
+        ids: Option<Vec<u16>>,
+        from: Option<u16>,
+        to: Option<u16>,
+    ) -> Result<()> {
+        let todo_set = self.collect_ids(ids, from, to)?;
+        for id in todo_set {
             let todo = self.get_todo(id).context("Get todo error")?;
             match todo.state {
                 State::Dropped => todo.state = State::Todo,
                 _ => todo.state = State::Dropped,
             }
         }
-
         Ok(())
+    }
+
+    pub fn clean(&mut self) {
+        self.list
+            .retain(|todo| !matches!(todo.state, State::Done | State::Dropped));
     }
 
     fn get_todo(&mut self, id: u16) -> Result<&mut Todo> {
@@ -197,7 +232,7 @@ impl TodoMgr {
     }
 
     fn parse(&self, todo_str: &str) -> Result<Todo> {
-        let splited: Vec<&str> = todo_str.trim().split(' ').collect();
+        let splited: Vec<&str> = todo_str.split_whitespace().collect();
 
         let mut iter = splited.iter();
 
@@ -219,5 +254,34 @@ impl TodoMgr {
         let content: String = splited[1..].join(" ");
 
         Ok(Todo { state, content })
+    }
+
+    fn collect_ids(
+        &self,
+        ids: Option<Vec<u16>>,
+        from: Option<u16>,
+        to: Option<u16>,
+    ) -> Result<BTreeSet<u16>> {
+        match (ids, from, to) {
+            (None, Some(f), Some(t)) => {
+                if f >= t {
+                    bail!("--from must be less them --to")
+                }
+                Ok((f..=t).collect())
+            }
+            (Some(mut list), None, None) => {
+                list.sort();
+                list.dedup();
+                Ok(list.iter().copied().collect())
+            }
+            (Some(list), Some(f), Some(t)) => {
+                let mut id_set: BTreeSet<u16> = (f..=t).collect();
+                id_set.extend(list);
+                Ok(id_set)
+            }
+            (_, Some(_), None) => bail!("Add --to flag"),
+            (_, None, Some(_)) => bail!("Add --from flag"),
+            _ => bail!("Specify range of ids"),
+        }
     }
 }

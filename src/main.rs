@@ -20,9 +20,16 @@ fn main() -> Result<()> {
         args::Command::Rewrite { id, content } => {
             todomgr.rewrite(id, content).context("Rewrite todo error")?
         }
-        args::Command::Remove { ids } => todomgr.remove(ids).context("Remove todo error")?,
-        args::Command::Switch { ids } => todomgr.switch(ids).context("Switch todo state error")?,
-        args::Command::Drop { ids } => todomgr.drop(ids).context("Drop todo error")?,
+        args::Command::Remove { ids, from, to } => {
+            todomgr.remove(ids, from, to).context("Remove todo error")?
+        }
+        args::Command::Switch { ids, from, to } => todomgr
+            .switch(ids, from, to)
+            .context("Switch todo state error")?,
+        args::Command::Drop { ids, from, to } => {
+            todomgr.drop(ids, from, to).context("Drop todo error")?
+        }
+        args::Command::Clean {} => todomgr.clean(),
     }
     todomgr.print();
     todomgr.save().context("Save to file error")?;
