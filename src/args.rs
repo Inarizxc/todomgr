@@ -19,7 +19,11 @@ pub enum Command {
     #[command(alias = "ls")]
     List {},
     /// Add new Todo
-    Add { content: Vec<String> },
+    Add {
+        #[arg(short, long)]
+        separator: Option<char>,
+        content: Vec<String>,
+    },
     /// Rewrite Todo
     #[command(alias = "re")]
     Rewrite { id: u16, content: Vec<String> },

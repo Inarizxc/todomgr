@@ -117,12 +117,22 @@ impl TodoMgr {
         }
     }
 
-    pub fn add(&mut self, vec_content: Vec<String>) {
+    pub fn add(&mut self, vec_content: Vec<String>, sep: Option<char>) {
         let content = vec_content.join(" ");
-        self.list.push(Todo {
-            state: State::Todo,
-            content,
-        });
+        match sep {
+            Some(s) => {
+                for c in content.split(s) {
+                    self.list.push(Todo {
+                        state: State::Todo,
+                        content: c.trim().to_string(),
+                    })
+                }
+            }
+            None => self.list.push(Todo {
+                state: State::Todo,
+                content: content.clone(),
+            }),
+        }
     }
 
     pub fn rewrite(&mut self, id: u16, vec_content: Vec<String>) -> Result<()> {

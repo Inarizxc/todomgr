@@ -16,7 +16,7 @@ fn main() -> Result<()> {
 
     match args.command {
         args::Command::List {} => {}
-        args::Command::Add { content } => todomgr.add(content),
+        args::Command::Add { content, separator } => todomgr.add(content, separator),
         args::Command::Rewrite { id, content } => {
             todomgr.rewrite(id, content).context("Rewrite todo error")?
         }
