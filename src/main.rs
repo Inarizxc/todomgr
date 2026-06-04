@@ -5,6 +5,8 @@ use anyhow::{Context, Result};
 use args::Args;
 use clap::Parser;
 
+use app::Ascii;
+use app::NerdFont;
 use app::TodoMgr;
 
 fn main() -> Result<()> {
@@ -33,9 +35,9 @@ fn main() -> Result<()> {
         args::Command::Clean {} => todomgr.clean(),
     }
     if no_nerd_fonts {
-        todomgr.print_no_nerd_fonts();
+        todomgr.print::<Ascii>();
     } else {
-        todomgr.print();
+        todomgr.print::<NerdFont>();
     }
     todomgr.save().context("Save to file error")?;
     Ok(())

@@ -30,42 +30,42 @@ pub enum Command {
     },
     /// Rewrite todo
     #[command(alias = "re")]
-    Rewrite { id: u16, content: Vec<String> },
+    Rewrite { id: usize, content: Vec<String> },
     /// Remove todo
     #[command(alias = "rm")]
     Remove {
         /// Start of ids range
         #[arg(long, short)]
-        from: Option<u16>,
+        from: Option<usize>,
         /// End of ids range
         #[arg(long, short)]
-        to: Option<u16>,
+        to: Option<usize>,
 
-        ids: Option<Vec<u16>>,
+        ids: Option<Vec<usize>>,
     },
     /// Switch todo state
     #[command(alias = "sw")]
     Switch {
         /// Start of ids range
         #[arg(long, short)]
-        from: Option<u16>,
+        from: Option<usize>,
         /// End of ids range
         #[arg(long, short)]
-        to: Option<u16>,
+        to: Option<usize>,
 
-        ids: Option<Vec<u16>>,
+        ids: Option<Vec<usize>>,
     },
     /// Drop todo
     #[command(alias = "d")]
     Drop {
         /// Start of ids range
         #[arg(long, short)]
-        from: Option<u16>,
+        from: Option<usize>,
         /// End of ids range
         #[arg(long, short)]
-        to: Option<u16>,
+        to: Option<usize>,
 
-        ids: Option<Vec<u16>>,
+        ids: Option<Vec<usize>>,
     },
     /// Delete Done and Dropped todos
     Clean {},
