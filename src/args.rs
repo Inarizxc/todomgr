@@ -9,25 +9,29 @@ pub struct Args {
     #[arg(short, long)]
     pub path: Option<PathBuf>,
 
+    /// Print todos list without nerd fonts
+    #[arg(short, long)]
+    pub no_nerd_fonts: bool,
+
     #[command(subcommand)]
     pub command: Command,
 }
 
 #[derive(Debug, Subcommand)]
 pub enum Command {
-    /// List Todos
+    /// Print todos list
     #[command(alias = "ls")]
     List {},
-    /// Add new Todo
+    /// Add new todo
     Add {
         #[arg(short, long)]
         separator: Option<char>,
         content: Vec<String>,
     },
-    /// Rewrite Todo
+    /// Rewrite todo
     #[command(alias = "re")]
     Rewrite { id: u16, content: Vec<String> },
-    /// Remove Todo
+    /// Remove todo
     #[command(alias = "rm")]
     Remove {
         /// Start of ids range
@@ -39,7 +43,7 @@ pub enum Command {
 
         ids: Option<Vec<u16>>,
     },
-    /// Switch Todo state
+    /// Switch todo state
     #[command(alias = "sw")]
     Switch {
         /// Start of ids range
@@ -51,7 +55,7 @@ pub enum Command {
 
         ids: Option<Vec<u16>>,
     },
-    /// Drop Todo
+    /// Drop todo
     #[command(alias = "d")]
     Drop {
         /// Start of ids range
@@ -63,6 +67,6 @@ pub enum Command {
 
         ids: Option<Vec<u16>>,
     },
-    /// Delete Done and Dropped Todos
+    /// Delete Done and Dropped todos
     Clean {},
 }

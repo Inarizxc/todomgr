@@ -11,6 +11,7 @@ fn main() -> Result<()> {
     let args = Args::parse();
 
     let path = args.path;
+    let no_nerd_fonts = args.no_nerd_fonts;
     let mut todomgr = TodoMgr::init(path).context("Todomgr init error")?;
     todomgr.open().context("Todo list open error")?;
 
@@ -31,7 +32,11 @@ fn main() -> Result<()> {
         }
         args::Command::Clean {} => todomgr.clean(),
     }
-    todomgr.print();
+    if no_nerd_fonts {
+        todomgr.print_no_nerd_fonts();
+    } else {
+        todomgr.print();
+    }
     todomgr.save().context("Save to file error")?;
     Ok(())
 }

@@ -74,14 +74,6 @@ impl TodoMgr {
     }
 
     pub fn save(&self) -> Result<()> {
-        // let mut contents = String::new();
-        // for todo in &self.list {
-        //     contents += &format!("[{}] ", todo.state.as_str());
-        //     contents += &todo.content;
-        //     contents += "\n";
-        // }
-        // fs::write(&self.file_path, contents).context("File write error")?;
-
         let file = fs::File::create(&self.file_path)?;
         let mut writer = BufWriter::new(file);
         for todo in &self.list {
@@ -102,7 +94,7 @@ impl TodoMgr {
                             nerd_font_symbols::cod::COD_CIRCLE_LARGE,
                             todo.content
                         )
-                        .bright_white()
+                        .normal()
                     }
                     State::Doing => {
                         format!(
@@ -127,6 +119,29 @@ impl TodoMgr {
                             todo.content.strikethrough()
                         )
                         .red()
+                    }
+                },
+            )
+        }
+    }
+
+    pub fn print_no_nerd_fonts(&self) {
+        for (id, todo) in self.list.iter().enumerate() {
+            println!(
+                "{}) {}",
+                id + 1,
+                match todo.state {
+                    State::Todo => {
+                        format!("[ ]  {}", todo.content).normal()
+                    }
+                    State::Doing => {
+                        format!("[/]  {}", todo.content).yellow()
+                    }
+                    State::Done => {
+                        format!("[x]  {}", todo.content).green()
+                    }
+                    State::Dropped => {
+                        format!("[-]  {}", todo.content.strikethrough()).red()
                     }
                 },
             )
